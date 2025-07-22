@@ -12,6 +12,21 @@ export default function Home() {
   const determineDataType = (value: string): string => {
     if (value === '') return '';
     
+    // Check if it's None
+    if (value === 'None') {
+      return 'NoneType';
+    }
+    
+    // Check if it's a boolean (True/False in Python style)
+    if (value === 'True' || value === 'False') {
+      return 'bool';
+    }
+    
+    // Check if it's a complex number
+    if (/^\d*\.?\d*[+-]\d*\.?\d*j$/.test(value) || /^\d*\.?\d*j$/.test(value)) {
+      return 'complex';
+    }
+    
     // Check if it's a number (int or float)
     if (!isNaN(Number(value)) && value.trim() !== '') {
       // Check if it's an integer
@@ -22,9 +37,39 @@ export default function Home() {
       }
     }
     
-    // Check if it's a boolean (True/False in Python style)
-    if (value === 'True' || value === 'False') {
-      return 'bool';
+    // Check if it's a set (Python set syntax)
+    if (value.startsWith('{') && value.endsWith('}') && !value.includes(':')) {
+      try {
+        // Convert set-like syntax to array to check validity
+        const content = value.slice(1, -1);
+        if (content.trim() === '') return 'set'; // empty set
+        JSON.parse('[' + content + ']');
+        return 'set';
+      } catch (e) {
+        // Check for Python-style set with single quotes
+        const pythonSetPattern = /^{\s*'[^']*'(\s*,\s*'[^']*')*\s*}$/;
+        if (pythonSetPattern.test(value)) {
+          return 'set';
+        }
+      }
+    }
+    
+    // Check if it's a dictionary (Python dict syntax)
+    if (value.startsWith('{') && value.endsWith('}') && value.includes(':')) {
+      try {
+        JSON.parse(value);
+        return 'dict';
+      } catch (e) {
+        // Check for Python-style dict with single quotes
+        if (value.includes(':')) {
+          return 'dict';
+        }
+      }
+    }
+    
+    // Check if it's a tuple (Python tuple syntax)
+    if (value.startsWith('(') && value.endsWith(')')) {
+      return 'tuple';
     }
     
     // Check if it's a list (Python array syntax)
@@ -52,24 +97,39 @@ export default function Home() {
       }
     }
     
-    // Check if it's a dictionary (Python dict syntax)
-    if (value.startsWith('{') && value.endsWith('}')) {
-      try {
-        JSON.parse(value);
-        return 'dict';
-      } catch (e) {
-        // Invalid dict syntax, treat as string
-      }
+    // Check if it's a bytes literal
+    if (value.startsWith("b'") && value.endsWith("'") || value.startsWith('b"') && value.endsWith('"')) {
+      return 'bytes';
     }
     
-    // Check if it's a tuple (Python tuple syntax)
-    if (value.startsWith('(') && value.endsWith(')')) {
-      return 'tuple';
+    // Check if it's a raw string
+    if (value.startsWith("r'") && value.endsWith("'") || value.startsWith('r"') && value.endsWith('"')) {
+      return 'str';
     }
     
-    // Check if it's None
-    if (value === 'None') {
-      return 'NoneType';
+    // Check if it's a formatted string
+    if (value.startsWith("f'") && value.endsWith("'") || value.startsWith('f"') && value.endsWith('"')) {
+      return 'str';
+    }
+    
+    // Check if it's a regular string with quotes
+    if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith('"') && value.endsWith('"'))) {
+      return 'str';
+    }
+    
+    // Check if it looks like a function call
+    if (/^\w+\([^)]*\)$/.test(value)) {
+      return 'function';
+    }
+    
+    // Check if it looks like a class instantiation
+    if (/^[A-Z]\w*\([^)]*\)$/.test(value)) {
+      return 'object';
+    }
+    
+    // Check if it's a range
+    if (/^range\(\d+(,\s*\d+)*(,\s*\d+)?\)$/.test(value)) {
+      return 'range';
     }
     
     // Default to string
@@ -172,7 +232,7 @@ export default function Home() {
               borderRight: '1px solid #ddd',
               textAlign: 'center'
             }}>
-              Type
+              Data Type
             </div>
             <div style={{
               flex: '1',
