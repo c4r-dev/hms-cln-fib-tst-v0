@@ -8,6 +8,8 @@ export default function Home() {
     { parameter: '', outcome: '', type: '' },
     { parameter: '', outcome: '', type: '' }
   ]);
+  const [testsRun, setTestsRun] = useState(false);
+  const [results, setResults] = useState<string[]>([]);
 
   const determineDataType = (value: string): string => {
     if (value === '') return '';
@@ -148,15 +150,32 @@ export default function Home() {
     newTestData[index].outcome = value;
     setTestData(newTestData);
   };
+
+  const isButtonsDisabled = () => {
+    return testData.some(row => row.parameter === '' || row.outcome === '');
+  };
+
+  const addParameter = () => {
+    setTestData([...testData, { parameter: '', outcome: '', type: '' }]);
+  };
+
+  const runTests = () => {
+    const testResults = testData.map(row => {
+      // Only int type with "Correct" outcome is valid
+      if (row.type === 'int' && row.outcome === 'Correct') {
+        return 'Correct';
+      } else {
+        return 'Incorrect';
+      }
+    });
+    setResults(testResults);
+    setTestsRun(true);
+  };
   const fibonacciCode = `def fibonacci(n):
     """
     Returns the nth Fibonacci number.
-    
-    Args:
-        n (int): The position in the Fibonacci sequence (0-indexed)
-    
-    Returns:
-        int: The Fibonacci number at position n
+    Args: n (int): The position in the Fibonacci sequence (0-indexed)
+    Returns: int: The Fibonacci number at position n
     """
     if n <= 1:
         return n
@@ -249,6 +268,15 @@ export default function Home() {
             }}>
               Outcome
             </div>
+            {testsRun && (
+              <div style={{
+                flex: '1',
+                padding: '12px',
+                textAlign: 'center'
+              }}>
+                Results
+              </div>
+            )}
           </div>
 
           {/* Data Rows */}
@@ -309,8 +337,43 @@ export default function Home() {
                   <option value="Incorrect">Incorrect</option>
                 </select>
               </div>
+              {testsRun && (
+                <div style={{
+                  flex: '1',
+                  padding: '12px',
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+                  color: results[index] === 'Correct' ? '#28a745' : '#dc3545'
+                }}>
+                  {results[index]}
+                </div>
+              )}
             </div>
           ))}
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          gap: '10px',
+          marginTop: '20px',
+          justifyContent: 'center'
+        }}>
+          {!testsRun && (
+            <button 
+              className="button" 
+              onClick={addParameter}
+              disabled={isButtonsDisabled()}
+            >
+              ADD PARAMETER
+            </button>
+          )}
+          <button 
+            className="button"
+            onClick={runTests}
+            disabled={isButtonsDisabled()}
+          >
+            RUN TESTS
+          </button>
         </div>
       </div>
     </div>
